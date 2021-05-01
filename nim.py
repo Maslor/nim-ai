@@ -101,7 +101,10 @@ class NimAI():
         Return the Q-value for the state `state` and the action `action`.
         If no Q-value exists yet in `self.q`, return 0.
         """
-        raise NotImplementedError
+        if (tuple(state), action) in self.q.keys():
+            return self.q[tuple(state), action]
+        else:
+            return 0
 
     def update_q_value(self, state, action, old_q, reward, future_rewards):
         """
@@ -118,7 +121,7 @@ class NimAI():
         `alpha` is the learning rate, and `new value estimate`
         is the sum of the current reward and estimated future rewards.
         """
-        raise NotImplementedError
+        self.q[tuple(state), action] = old_q + self.alpha * ((reward + future_rewards) - old_q)
 
     def best_future_reward(self, state):
         """
@@ -130,7 +133,11 @@ class NimAI():
         Q-value in `self.q`. If there are no available actions in
         `state`, return 0.
         """
-        raise NotImplementedError
+        maximum, maximum_pair = self.choose_max_pair(state)
+        if len(maximum_pair) == 1:
+            return maximum
+        else:
+            return 0
 
     def choose_action(self, state, epsilon=True):
         """
@@ -147,7 +154,30 @@ class NimAI():
         If multiple actions have the same Q-value, any of those
         options is an acceptable return value.
         """
-        raise NotImplementedError
+        maximum_q, max_pair = self.choose_max_pair(state)
+
+        if epsilon:
+            if len(max_pair) > 0:
+                return random.choices([max_pair, random.choice(list(Nim.available_actions(state)))],
+                                      weights=[1 - epsilon, epsilon])[0]
+            else:
+                return random.choice(list(Nim.available_actions(state)))
+        else:
+            if len(max_pair) > 0:
+                return max_pair
+            else:
+                return random.choice(list(Nim.available_actions(state)))
+
+    def choose_max_pair(self, state):
+        pairs = []
+        maximum = 0
+        maximum_pair = {}
+        for pair in self.q.keys():
+            pairs.append(pair)
+            if state in pair and self.q[pair] > maximum:
+                maximum = self.q[pair]
+                maximum_pair = pair
+        return maximum, maximum_pair
 
 
 def train(n):
